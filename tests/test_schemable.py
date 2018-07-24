@@ -190,13 +190,6 @@ def test_list(case):
     ),
     dict(
         schema={'a': {}},
-        schema_opts={'extra': ALLOW_EXTRA},
-        data={'a': {'b': 1, 'c': True}},
-        expected_data={'a': {'b': 1, 'c': True}},
-        expected_errors={}
-    ),
-    dict(
-        schema={'a': {}},
         data={'a': {}},
         expected_data={'a': {}},
         expected_errors={}
@@ -369,42 +362,6 @@ def test_list(case):
         expected_errors={}
     ),
     dict(
-        schema={
-            'a': {
-                'b': {
-                    str: {
-                        'c': str
-                    }
-                }
-            }
-        },
-        schema_opts={'extra': ALLOW_EXTRA},
-        data={
-            'a': {
-                'b': {
-                    'x': {
-                        'c': 'd',
-                        5: None, 'ee': set()
-                    }
-                },
-                'f': 5
-            }
-        },
-        expected_data={
-            'a': {
-                'b': {
-                    'x': {
-                        'c': 'd',
-                        5: None,
-                        'ee': set()
-                    }
-                },
-                'f': 5
-            }
-        },
-        expected_errors={}
-    ),
-    dict(
         schema={object: object},
         data={'a': 1, 'b': True},
         expected_data={'a': 1, 'b': True},
@@ -421,27 +378,6 @@ def test_list(case):
         data={'a': 'x'},
         expected_data={'a': 'x'},
         expected_errors={}
-    ),
-    dict(
-        schema={str: str},
-        schema_opts={'extra': DENY_EXTRA},
-        data={1: 'a'},
-        expected_data=None,
-        expected_errors={
-            str: "missing required key",
-            1: "bad key: not in [<class 'str'>]"
-        }
-    ),
-    dict(
-        schema={str: str, bool: bool},
-        schema_opts={'extra': DENY_EXTRA},
-        data={1: 'a'},
-        expected_data=None,
-        expected_errors={
-            str: "missing required key",
-            bool: "missing required key",
-            1: "bad key: not in [<class 'bool'>, <class 'str'>]"
-        }
     ),
     dict(
         schema={int: int},
@@ -505,27 +441,6 @@ def test_list(case):
         }
     ),
     dict(
-        schema={'a': 1},
-        schema_opts={'extra': DENY_EXTRA},
-        data={'b': 2},
-        expected_data=None,
-        expected_errors={
-            'a': "missing required key",
-            'b': "bad key: not in ['a']"
-        }
-    ),
-    dict(
-        schema={'a': 1, int: str},
-        schema_opts={'extra': DENY_EXTRA},
-        data={'b': 2},
-        expected_data=None,
-        expected_errors={
-            'a': "missing required key",
-            int: "missing required key",
-            'b': "bad key: not in ['a', <class 'int'>]"
-        }
-    ),
-    dict(
         schema={'a': []},
         data={'a': {}},
         expected_data=None,
@@ -553,6 +468,97 @@ def test_list(case):
         expected_data={'b': 'c'},
         expected_errors={'a': 'missing required key'}
     ),
+])
+def test_dict(case):
+    assert_schema_case(case)
+
+
+@parametrize('case', [
+    dict(
+        schema={'a': {}},
+        schema_opts={'extra': ALLOW_EXTRA},
+        data={'a': {'b': 1, 'c': True}},
+        expected_data={'a': {'b': 1, 'c': True}},
+        expected_errors={}
+    ),
+    dict(
+        schema={
+            'a': {
+                'b': {
+                    str: {
+                        'c': str
+                    }
+                }
+            }
+        },
+        schema_opts={'extra': ALLOW_EXTRA},
+        data={
+            'a': {
+                'b': {
+                    'x': {
+                        'c': 'd',
+                        5: None, 'ee': set()
+                    }
+                },
+                'f': 5
+            }
+        },
+        expected_data={
+            'a': {
+                'b': {
+                    'x': {
+                        'c': 'd',
+                        5: None,
+                        'ee': set()
+                    }
+                },
+                'f': 5
+            }
+        },
+        expected_errors={}
+    ),
+    dict(
+        schema={str: str},
+        schema_opts={'extra': DENY_EXTRA},
+        data={1: 'a'},
+        expected_data=None,
+        expected_errors={
+            str: "missing required key",
+            1: "bad key: not in [<class 'str'>]"
+        }
+    ),
+    dict(
+        schema={str: str, bool: bool},
+        schema_opts={'extra': DENY_EXTRA},
+        data={1: 'a'},
+        expected_data=None,
+        expected_errors={
+            str: "missing required key",
+            bool: "missing required key",
+            1: "bad key: not in [<class 'bool'>, <class 'str'>]"
+        }
+    ),
+    dict(
+        schema={'a': 1},
+        schema_opts={'extra': DENY_EXTRA},
+        data={'b': 2},
+        expected_data=None,
+        expected_errors={
+            'a': "missing required key",
+            'b': "bad key: not in ['a']"
+        }
+    ),
+    dict(
+        schema={'a': 1, int: str},
+        schema_opts={'extra': DENY_EXTRA},
+        data={'b': 2},
+        expected_data=None,
+        expected_errors={
+            'a': "missing required key",
+            int: "missing required key",
+            'b': "bad key: not in ['a', <class 'int'>]"
+        }
+    ),
     dict(
         schema={'a': {}},
         schema_opts={'extra': DENY_EXTRA},
@@ -565,14 +571,13 @@ def test_list(case):
             }
         }
     ),
+])
+def test_dict_extra(case):
+    assert_schema_case(case)
     dict(
-        schema={'x': Any(lambda x: x > 10, lambda x: x > 5)},
-        data={'x': 4},
         expected_data=None,
-        expected_errors={'x': 'bad value: <lambda>(4) should evaluate to True'}
     ),
 ])
-def test_dict(case):
     assert_schema_case(case)
 
 
@@ -697,6 +702,12 @@ def test_all(case):
         data={'x': 15},
         expected_data={'x': 15},
         expected_errors={}
+    ),
+    dict(
+        schema={'x': Any(lambda x: x > 10, lambda x: x > 5)},
+        data={'x': 4},
+        expected_data=None,
+        expected_errors={'x': 'bad value: <lambda>(4) should evaluate to True'}
     ),
 ])
 def test_any(case):
