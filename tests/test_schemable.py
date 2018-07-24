@@ -574,10 +574,74 @@ def test_dict(case):
 ])
 def test_dict_extra(case):
     assert_schema_case(case)
+
+
+@parametrize('case', [
     dict(
+        schema=OrderedDict([
+            ('a', int),
+            (str, str)
+        ]),
+        data={'a': 1, 'b': 'c'},
+        expected_data={'a': 1, 'b': 'c'},
+        expected_errors={}
+    ),
+    dict(
+        schema=OrderedDict([
+            ('a', int),
+            (str, str)
+        ]),
+        data={'a': 'd', 'b': 'c'},
+        expected_data={'b': 'c'},
+        expected_errors={'a': ('bad value: type error, '
+                               'expected int but found str')}
+    ),
+    dict(
+        schema=OrderedDict([
+            (str, str),
+            ((str, int), int),
+            ((int, str), bool),
+            ((float, str), float)
+        ]),
+        data={
+            'str': 'a',
+            '(str, int)': 1,
+            '(int, str)': True,
+            '(float, str)': 2.5
+        },
+        expected_data={
+            'str': 'a',
+            '(str, int)': 1,
+            '(int, str)': True,
+            '(float, str)': 2.5
+        },
+        expected_errors={}
+    ),
+    dict(
+        schema=OrderedDict([
+            (str, str),
+            ((str, int), int),
+            ((int, str), bool),
+            ((float, str), float)
+        ]),
+        data={'str': None},
         expected_data=None,
+        expected_errors={'str': ('bad value: type error, '
+                                 'expected float but found NoneType')}
+    ),
+    dict(
+        schema=OrderedDict([
+            ((str, int), int),
+            ((int, str), bool),
+            ((float, str), float),
+            (str, {'a': int})
+        ]),
+        data={'str': {}},
+        expected_data=None,
+        expected_errors={'str': {'a': 'missing required key'}}
     ),
 ])
+def test_dict_resolution_order(case):
     assert_schema_case(case)
 
 

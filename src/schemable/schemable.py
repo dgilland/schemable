@@ -296,25 +296,35 @@ class Object(SchemaABC):
         seen = set()
 
         for key, value in obj.items():
-            value_schema = None
+            # It's possible that a key may apply to multiple key schemas (e.g.
+            # {str: str, (str, int): int}). In most cases, these schemas should
+            # be rewritten so that the schema key types are exclusive but we
+            # can still handle this scenario by keeping track of all value
+            # schemas whose key schema matches. We can then check each value
+            # schema and if any of the value schemas match, then the key/value
+            # will be considered valid.
+            value_schemas = ()
 
-            # Try to find the most relevant schema to evaulate for a key since
-            # multiple key schemas could be a candidate (e.g. schemas 'a' and
-            # str would both apply to key 'a' but we want to use the most
-            # specific one).
             if key in self.schema:
-                value_schema = self.schema[key]
+                # The exception to the above about trying multiple value
+                # schemas is when there is a named key schema
+                # (e.g. {'a': str, str: int}) where only the named key schema
+                # should apply (in this case, only check that key 'a' has type
+                # `str` while ignoring the key `str` with type `int`).
+                value_schemas += (self.schema[key],)
             else:
-                # TODO: Warn/error if multiple key schemas match? Generally,
-                # indicates schema may need to be rewritten to to only match a
-                # single key schema.
+                # For all other key schemas, we'll compose a list of value
+                # schemas to validate against. Basically, we'll treat it like
+                # an Any() schema (e.g. {str: str, (str, int): int} would be
+                # like {(str, int): Any(str, int)}.
                 for key_schema in self.schema:
                     if not key_schema(key).errors:
-                        value_schema = self.schema[key_schema]
+                        # Don't add duplicate value schemas.
+                        if self.schema[key_schema] not in value_schemas:
+                            value_schemas += (self.schema[key_schema],)
                         seen.add(key_schema)
-                        break
 
-            if value_schema is None:
+            if not value_schemas:
                 # None of the key schemas match this obj key so need to check
                 # the "extra" policy to determine what to do with it. If the
                 # extra policy is anything other than ALLOW or DENY, then we
@@ -334,10 +344,23 @@ class Object(SchemaABC):
             # key violations.
             seen.add(key)
 
+            # In the event that we have multiple value schemas due to `key`
+            # matching multiple key schemas, we will apply the Any() validator
+            # and return its results; otherwise, we'll just validate against
+            # the one value schema.
+            # NOTE: We could just apply Any() in all cases but we'll get a
+            # slight performance improvement by not wrapping it. Generally, the
+            # multiple value schemas should be a rarity so better to use the
+            # more direct route since it applies in most cases.
+            if len(value_schemas) == 1:
+                value_schema = value_schemas[0]
+            else:
+                value_schema = Any(*value_schemas)
+
             value_result = value_schema(value)
 
             if value_result.errors:
-                # If errors is a string, then we want to wrap it with custom
+                # If errors is a string, then we want to wrap it with a custom
                 # message; otherwise, errors is a dict of other errors so we
                 # just assign it.
                 error = value_result.errors
@@ -345,6 +368,7 @@ class Object(SchemaABC):
                     error = 'bad value: {}'.format(error)
                 errors[key] = error
 
+            # Ensure data is partially/fullly loaded.
             if value_result.data is not None or not value_result.errors:
                 data[key] = value_result.data
 
@@ -358,6 +382,9 @@ class Object(SchemaABC):
             for key, default in self.defaults.items():
                 data.setdefault(key, default)
 
+        # Ensure data is None when it's empty and there are errors or if no
+        # errors, then when data doesn't equal `obj` (this covers the case when
+        # data=={} and obj=={}).
         if not data and (errors or data != obj):
             data = None
 

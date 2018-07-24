@@ -273,7 +273,7 @@ There are two ways to set strict mode:
 1. Set ``strict=True`` when creating a ``Schema`` object (i.e., ``Schema(..., strict=True)``)
 2. Set ``strict=True`` when evaulating a schema (i.e. ``schema(..., strict=True)``)
 
-TIP: If ``Schema()`` was created with ``strict=True``, use ``schema(..., strict=False)`` to evaulate the schema in non-strict mode.
+**TIP:** If ``Schema()`` was created with ``strict=True``, use ``schema(..., strict=False)`` to evaulate the schema in non-strict mode.
 
 .. code-block:: python
 
@@ -560,7 +560,7 @@ Optional keys can define a default using the ``default`` argument:
     # SchemaResult(data={'b': 5, 'c': {}}, errors={})
 
 
-TIP: For mutable defaults, always use a callable that returns a new instance. For example, for ``{}`` use ``dict``, for ``[]`` use ``list``, etc. This prevents bugs where the same object is used for separate schema results that results in changes to one affecting all the others.
+**TIP:** For mutable defaults, always use a callable that returns a new instance. For example, for ``{}`` use ``dict``, for ``[]`` use ``list``, etc. This prevents bugs where the same object is used for separate schema results that results in changes to one affecting all the others.
 
 When determining how to handle extra keys (i.e. keys in the data but not matched in the schema), there are three modes:
 
@@ -588,7 +588,7 @@ The "extra" mode is set via ``Schema(..., extra=ALLOW_EXTRA|DENY_EXTRA|IGNORE_EX
     # SchemaResult(data={1: 1}, errors={'a': "bad key: not in [<class 'int'>]"})
 
 
-For some schemas, data keys may logically match multiple schema keys (e.g. ``{'a': int, str: str, (str, int): bool}``). However, value-based key schemas are treated differently than type-based key schemas when it comes to validation resolution. The value-based key schemas will take precedence over type-based and will essentially "swallow" a key-value pair so that the value-based key schema must pass (while other key-schemas are ignored for a particular data key):
+For some schemas, data keys may logically match multiple schema keys (e.g. ``{'a': int, str: str, (str, int): bool}``). However, value-based key schemas are treated differently than type-based or other key schemas when it comes to validation resolution. The value-based key schemas will take precedence over all others and will essentially "swallow" a key-value pair so that the value-based key schema must pass (while other key-schemas are ignored for a particular data key):
 
 .. code-block:: python
 
@@ -608,47 +608,31 @@ For some schemas, data keys may logically match multiple schema keys (e.g. ``{'a
     schema({'a': 1, 'x': 'y'})
     # SchemaResult(data={'a': 1, 'x': 'y'}, errors={})
 
-For the type-based key schemas (in the absence of a value-based key match) *all* key schemas will be checked against a data key in order of key schemas with the least number of tyeps (i.e. ``int`` before ``(int, str)``). However, once a data key validates against a key schema, that key schema "wins" and the data value will then need to validate against the corresponding key schema's value schema; all other key schemas will be ignored. In these situations, though, the schema can usually be rewritten to avoid the key schema conflicts altogether:
+
+For non-value-based key schemas (in the absence of a value-based key match) *all* key schemas will be checked. Each matching key schema's value schema will then be used with ``Any()`` when evaluating the data value. As long as at least one of the data-value schemas match, the data key-value will validate. However, be aware that multiple matching key schemas likely indicates that the schema can be rewritten so that keys will only match a single key schema. Generally, this is preferrable since it makes the schema more deterministic and probably more "correct".
 
 .. code-block:: python
 
     from schemable import Schema
 
+    item = {'a': 1, 'x': 'y', 1: False, 2.5: 10.0, 'b': True}
 
-    # Instead of this which gives bad results.
+    # Instead of this.
     Schema({
         'a': int,
         str: str,
         (str, int): bool,
         (int, float): float
-    })({'a': 1, 'x': 'y', 1: False, 2.5: 10.0, 'b': True})
-    # SchemaResult(
-    #    data={'a': 1, 1: False, 2.5: 10.0, 'b': True},
-    #    errors={'x': 'bad value: type error, expected bool but found str',
-    #            <class 'str'>: 'missing required key'})
+    })(item)
+    # SchemaResult(data={'a': 1, 'x': 'y', 1: False, 2.5: 10.0, 'b': True}, errors={})
 
-
-
-    # which can vary based on schema definition ordering.
-    Schema({
-        'a': int,
-        (int, float): float,
-        (str, int): bool,
-        str: str
-    })({'a': 1, 'x': 'y', 1: False, 'b': True})
-    # SchemaResult(
-    #    data={'a': 1, 2.5: 10.0, 'b': True},
-    #    errors={'x': 'bad value: type error, expected bool but found str',
-    #            1: 'bad value: type error, expected float but found bool',
-    #            <class 'str'>: 'missing required key'}
-
-    # Rewrite the schema to fix it.
+    # Rewrite the schema to this.
     Schema({
         'a': int,
         str: (str, bool),
         int: (bool, float),
         float: float
-    })({'a': 1, 'x': 'y', 1: False, 2.5: 10.0, 'b': True})
+    })(item)
     # SchemaResult(data={'a': 1, 'x': 'y', 1: False, 2.5: 10.0, 'b': True}, errors={})
 
 
