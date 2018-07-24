@@ -4,15 +4,7 @@ schemable
 |version| |travis| |coveralls| |license|
 
 
-Schemable is a data parsing and validation library that let's you define simple schemas using dictionaries, lists, and types or complex schemas using various helpers.
-
-It is in the same vain as:
-
-- ``schema``: https://github.com/keleshev/schema
-- ``voluptuous``: https://github.com/alecthomas/voluptuous
-- ``marshmallow``: https://github.com/marshmallow-code/marshmallow
-
-The main difference with Schemable is that it provides an interface similar to ``schema`` and ``voluptuous`` (i.e. simple object schema declartions using dicts/lists instead of classes) but supports partial loading during non-strict mode like ``marshmallow``. Unlike ``marshamallow``, there is no concept of loading/dumping or deserialization/serialization; just validation, transformation, and parsing (the serialization is left up to you).
+Schemable is a schema parsing and validation library that let's you define schemas simply using dictionaries, lists, types, and callables.
 
 
 Links
@@ -28,10 +20,11 @@ Features
 ========
 
 - Simple schema definitions using ``dict``, ``list``, and ``type`` objects
-- Complex schema definitions using ``Any``, ``All``, ``As``, and predicate helpers
+- Complex schema definitions using ``Any``, ``All``, ``As``, and predicates
 - Detailed validation error messages
-- Full data loading successful validation, partial loading on failed validation
-- Strict and non-strict loading
+- Partial data loading on validation failure
+- Strict and non-strict parsing modes
+- Python 3.4+
 
 
 Quickstart
@@ -698,6 +691,18 @@ See Also
 --------
 
 For more details, please see the full documentation at https://schemable.readthedocs.io.
+
+
+Prior Art
+=========
+
+Schemable borrows featues from several other schema libraries:
+
+- ``schema``: https://github.com/keleshev/schema
+- ``voluptuous``: https://github.com/alecthomas/voluptuous
+- ``marshmallow``: https://github.com/marshmallow-code/marshmallow
+
+However, the main difference with Schemable is that it provides an interface similar to ``schema`` and ``voluptuous`` (i.e. simple object schema declartions using dicts/lists instead of classes) but supports partial data loading like ``marshmallow``. But unlike ``marshamallow``, there is no concept of loading/dumping or deserialization/serialization; there's just validation, transformation, and parsing (the de/serialization is left up to the developer).
 
 
 
