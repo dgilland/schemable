@@ -211,7 +211,7 @@ class Value(_HashableSchema, SchemaABC):
 
 class Collection(SchemaABC):
     """Schema for collections."""
-    _validate = Type(list)
+    _validate_obj = Type(list)
 
     def compile(self, schema):
         if not isinstance(schema, list):  # pragma: no cover
@@ -221,7 +221,7 @@ class Collection(SchemaABC):
         return All(*schema)
 
     def __call__(self, obj):
-        self._validate(obj)
+        self._validate_obj(obj)
 
         data = []
         errors = {}
@@ -249,7 +249,7 @@ class Collection(SchemaABC):
 
 class Object(SchemaABC):
     """Schema for objects."""
-    _validate = Type((dict, OrderedDict))
+    _validate_obj = Type((dict, OrderedDict))
 
     def compile(self, schema):
         if not isinstance(schema, dict):  # pragma: no cover
@@ -285,7 +285,7 @@ class Object(SchemaABC):
             return -2
 
     def __call__(self, obj):
-        self._validate(obj)
+        self._validate_obj(obj)
 
         # As type(obj) to create data so that data's type is the same as obj
         # since we support multiple types for obj.
