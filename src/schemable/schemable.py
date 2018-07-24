@@ -398,7 +398,7 @@ class All(SchemaABC):
         super().__init__(schemas)
 
     def compile(self, schema):
-        return [Schema(value) for value in schema]
+        return tuple(Schema(value) for value in schema)
 
     def __call__(self, obj):
         result = SchemaResult(obj, None)
@@ -420,7 +420,7 @@ class Any(SchemaABC):
         super().__init__(schemas)
 
     def compile(self, schema):
-        return [Schema(value) for value in schema]
+        return tuple(Schema(value) for value in schema)
 
     def __call__(self, obj):
         result = SchemaResult(obj, None)
