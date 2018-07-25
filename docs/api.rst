@@ -8,4 +8,5 @@ API Reference
     from schemable import *
 
 
-.. automodule:: schemable
+.. automodule:: schemable.schemable
+    :members:
