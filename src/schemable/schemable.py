@@ -192,8 +192,8 @@ class Value(_HashableSchema, SchemaABC):
         return obj
 
 
-class Collection(SchemaABC):
-    """Schema for collections."""
+class List(SchemaABC):
+    """Schema helper that validates against list objects."""
     _validate_obj = Type(list)
 
     def compile(self, schema):
