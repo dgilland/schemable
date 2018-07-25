@@ -166,37 +166,19 @@ class Type(_HashableSchema, SchemaABC):
             return self.spec.__name__
 
     def __call__(self, obj):
-        if not isinstance(obj, type):
-            obj_type = type(obj)
-        else:
-            obj_type = obj
-
-        try:
-            instance_of = isinstance(obj_type, self.schema)
-        except TypeError:  # pragma: no cover
-            instance_of = False
-
-        is_valid = (obj_type == self.spec or
-                    obj_type in self.schema or
-                    instance_of)
-
-        assert is_valid, self._format_error(obj_type)
+        if not isinstance(obj, self.schema):
+            raise AssertionError(self._format_error(obj))
 
         return obj
 
-    def _format_error(self, obj_type):
-        def _format_type_names(types):
-            if not isinstance(types, tuple):  # pragma: no cover
-                types = (types,)
-
-            fmt = ['{}'] * len(types)
-            return (' or '.join(fmt)
-                    .format(*sorted((t.__name__ for t in types),
-                                    key=lambda n: n.lower())))
+    def _format_error(self, obj):
+        expected = (
+            ' or '.join(['{}'] * len(self.schema))
+            .format(*sorted((t.__name__ for t in self.schema),
+                            key=lambda n: n.lower())))
 
         return ('type error, expected {} but found {}'
-                .format(_format_type_names(self.schema),
-                        obj_type.__name__))
+                .format(expected, type(obj).__name__))
 
 
 class Value(_HashableSchema, SchemaABC):

@@ -54,8 +54,8 @@ def test_value(case):
     dict(
         schema=str,
         data=str,
-        expected_data=str,
-        expected_errors=None
+        expected_data=None,
+        expected_errors='type error, expected str but found type'
     ),
     dict(
         schema=str,
@@ -426,13 +426,11 @@ def test_list(case):
         },
         expected_data={
             'x1': [{
-                'x2': [{'x3': 'a'}, {'x4': 1}]
+                'x2': [{'x3': 'a'}, {'x4': 1}, {'x5': False}]
             }]
         },
         expected_errors={
             'x1': {0: {
-                'x2': {2: {'x5': ('bad value: type error, expected int or str '
-                                  'but found bool')}},
                 'x6': {0: ('bad value: type error, expected dict or '
                            'OrderedDict but found int')},
                 'x7': 'bad value: type error, expected list but found dict'
