@@ -133,8 +133,7 @@ def test_type(case):
         ],
         expected_errors={
             1: {
-                'y': ('bad value: type error, '
-                      'expected dict or OrderedDict but found list')
+                'y': 'bad value: type error, expected Mapping but found list'
             },
             2: {
                 'z': {
@@ -279,8 +278,7 @@ def test_list(case):
             }
         },
         expected_errors={
-            'y': ('bad value: type error, '
-                  'expected dict or OrderedDict but found list'),
+            'y': 'bad value: type error, expected Mapping but found list',
             'z': {
                 'a': 'bad value: type error, expected int but found str',
                 'b': 'bad value: type error, expected bool but found NoneType',
@@ -431,8 +429,8 @@ def test_list(case):
         },
         expected_errors={
             'x1': {0: {
-                'x6': {0: ('bad value: type error, expected dict or '
-                           'OrderedDict but found int')},
+                'x6': {0: ('bad value: type error, expected Mapping '
+                           'but found int')},
                 'x7': 'bad value: type error, expected list but found dict'
             }},
             'x8': 'bad value: type error, expected list but found dict'
@@ -450,8 +448,7 @@ def test_list(case):
         data={'a': []},
         expected_data=None,
         expected_errors={
-            'a': ('bad value: type error, expected dict or OrderedDict '
-                  'but found list')
+            'a': 'bad value: type error, expected Mapping but found list'
         }
     ),
     dict(
@@ -831,8 +828,7 @@ def test_nested_schema(case):
         schema={},
         data=[],
         expected_data=None,
-        expected_errors=('type error, expected dict or OrderedDict '
-                         'but found list')
+        expected_errors='type error, expected Mapping but found list'
     ),
     dict(
         schema={'a': int},

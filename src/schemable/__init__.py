@@ -13,7 +13,7 @@ from .schemable import (
     Any,
     As,
     Collection,
-    Object,
+    Dict,
     Optional,
     Schema,
     SchemaError,

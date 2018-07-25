@@ -2,6 +2,7 @@
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from collections import OrderedDict, namedtuple
 
 
@@ -106,7 +107,7 @@ class Schema(_HashableSchema, SchemaABC):
         elif isinstance(schema, list):
             schema = Collection(schema, strict=self.strict)
         elif isinstance(schema, dict):
-            schema = Object(schema, strict=self.strict, extra=self.extra)
+            schema = Dict(schema, strict=self.strict, extra=self.extra)
         elif isinstance(schema, (tuple, type)):
             schema = Type(schema, strict=self.strict)
         elif callable(schema):
@@ -229,9 +230,9 @@ class Collection(SchemaABC):
         return SchemaResult(data, errors)
 
 
-class Object(SchemaABC):
-    """Schema for objects."""
-    _validate_obj = Type((dict, OrderedDict))
+class Dict(SchemaABC):
+    """Schema helper that validates against dict or dict-like objects."""
+    _validate_obj = Type(Mapping)
 
     def compile(self, schema):
         if not isinstance(schema, dict):  # pragma: no cover
