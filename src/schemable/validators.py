@@ -1,168 +1,30 @@
-"""The schemable module.
+"""The validators module.
 """
 
-from abc import ABC, abstractmethod
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from collections.abc import Mapping
 
-ALLOW_EXTRA = True
-DENY_EXTRA = False
-IGNORE_EXTRA = None
+import schemable
 
-
-class _NotSet(object):  # pragma: no cover
-    def __bool__(self):
-        return False
-
-    def __repr__(self):
-        return '<NotSet>'
-
-
-NotSet = _NotSet()
-
-
-class SchemaResult(namedtuple('SchemaResult', ['data', 'errors'])):
-    """The result returned from schema evaluation.
-
-    Attributes:
-        data (object): Parsed data that passed schema validation.
-        errors (object): Schema errors as ``None``, ``dict``, or ``str``
-            depending on whethere there were any errors and what kind of
-            schema was defined.
-    """
-    pass
-
-
-class SchemaError(AssertionError):
-    """Exception raised when schema validation fails during strict schema mode.
-    """
-    def __init__(self, message, errors, data, original_data):
-        super().__init__(message)
-        self.message = message
-        self.errors = errors
-        self.data = data
-        self.original_data = original_data
-
-    def __str__(self):  # pragma: no cover
-        return '{}: {}'.format(self.message, self.errors)
-
-
-class SchemaABC(ABC):
-    """Abstract base class that implements the core interface for all schema
-    related classes.
-    """
-    def __init__(self, spec):
-        self.spec = spec
-        self.schema = self.compile(self.spec)
-
-    def compile(self, spec):
-        return spec
-
-    @abstractmethod
-    def __call__(self):  # pragma: no cover
-        pass
-
-    def __str__(self):  # pragma: no cover
-        return str(self.spec)
-
-    def __repr__(self):  # pragma: no cover
-        return '{0}({1!r})'.format(self.__class__.__name__, self.spec)
-
-    __hash__ = None
-
-
-class _HashableSchema(object):
-    def __hash__(self):  # pragma: no cover
-        return hash(self.schema)
-
-    def __eq__(self, other):  # pragma: no cover
-        return self.schema == other
-
-    def __ne__(self, other):  # pragma: no cover
-        return not(self == other)
-
-
-class _CallableSchema(object):
-    def compile(self, spec):
-        if not callable(spec):  # pragma: no cover
-            raise TypeError('{} schema spec must be callable'
-                            .format(self.__class__.__name__))
-
-        if hasattr(spec, '__name__'):
-            name = spec.__name__
-        elif (hasattr(spec, '__class__') and
-                hasattr(spec.__class__, '__name__')):
-            name = spec.__class__.__name__
-        else:  # pragma: no cover
-            name = repr(spec)
-
-        self.name = name
-
-        return spec
-
-
-class Schema(_HashableSchema, SchemaABC):
-    """The primary schema class that defines the validation and loading
-    specification of a schema.
-
-    This class is used to create a top-level schema object that can be called
-    on input data to validation and load it according to the specification.
-    """
-    def __init__(self, spec, strict=False, extra=IGNORE_EXTRA):
-        self.strict = strict
-        self.extra = extra
-
-        super().__init__(spec)
-
-    def compile(self, spec):
-        # Compile `spec` into one of the available :class:`SchemaABC` dervied
-        # classes based on type.
-        if isinstance(spec, Schema):
-            schema = spec.schema
-        elif isinstance(spec, SchemaABC):
-            schema = spec
-        elif isinstance(spec, list):
-            schema = List(spec)
-        elif isinstance(spec, dict):
-            schema = Dict(spec, extra=self.extra)
-        elif isinstance(spec, (tuple, type)):
-            schema = Type(spec)
-        elif callable(spec):
-            schema = Validate(spec)
-        else:
-            schema = Value(spec)
-
-        return schema
-
-    def __str__(self):
-        return str(self.schema)
-
-    def __repr__(self):  # pragma: no cover
-        return '<{} {!r}>'.format(self.__class__.__name__, self.schema)
-
-    def __call__(self, obj, strict=NotSet):
-        if strict is NotSet:
-            strict = self.strict
-
-        try:
-            result = self.schema(obj)
-        except AssertionError as exc:
-            result = SchemaResult(None, str(exc))
-
-        if not isinstance(result, SchemaResult):
-            result = SchemaResult(result, None)
-
-        if strict and result.errors:
-            raise SchemaError('Schema validation failed',
-                              errors=result.errors,
-                              data=result.data,
-                              original_data=obj)
-
-        return result
+from .base import (
+    ALLOW_EXTRA,
+    DENY_EXTRA,
+    IGNORE_EXTRA,
+    NotSet,
+    SchemaABC,
+    SchemaResult,
+    _CallableSchema,
+    _HashableSchema
+)
 
 
 class Type(_HashableSchema, SchemaABC):
-    """Schema helper that validates against types."""
+    """Schema helper that validates against types.
+
+    Args:
+        spec (type|tuple[type]): A type or tuple or tuple of types to validate
+            against.
+    """
     def compile(self, spec):
         if isinstance(spec, type):
             schema = (spec,)
@@ -200,7 +62,11 @@ class Type(_HashableSchema, SchemaABC):
 
 
 class Value(_HashableSchema, SchemaABC):
-    """Schema helper that validates against value equality."""
+    """Schema helper that validates against value equality.
+
+    Args:
+        spec (object): Value to compare to.
+    """
     def __call__(self, obj):
         if obj != self.schema:
             raise AssertionError('value error, expected {!r} but found {!r}'
@@ -210,7 +76,12 @@ class Value(_HashableSchema, SchemaABC):
 
 
 class List(SchemaABC):
-    """Schema helper that validates against list objects."""
+    """Schema helper that validates against list objects.
+
+    Args:
+        spec (list): List containing schema specification to validate each list
+            item against.
+    """
     _validate_obj = Type(list)
 
     def compile(self, spec):
@@ -248,7 +119,14 @@ class List(SchemaABC):
 
 
 class Dict(SchemaABC):
-    """Schema helper that validates against dict or dict-like objects."""
+    """Schema helper that validates against dict or dict-like objects.
+
+    Args:
+        spec (dict): Dictionary containing schema specification to validate
+            against.
+        extra (bool|None, optional): Sets the extra keys policy. Defaults to
+            :const:`.IGNORE_EXTRA`.
+    """
     _validate_obj = Type(Mapping)
 
     def __init__(self, spec, extra=IGNORE_EXTRA):
@@ -277,13 +155,14 @@ class Dict(SchemaABC):
         # Order schema by whether the schema key is a Value object or not so
         # that all Value objects are first in the schema. This way we favor
         # validating a key by Value schemas over Type schemas.
-        schemas = sorted(((Schema(key), Schema(value, extra=self.extra))
-                          for key, value in spec.items()),
-                         key=self._priority_sort_key)
+        schemas = sorted(
+            ((schemable.Schema(key), schemable.Schema(value, extra=self.extra))
+             for key, value in spec.items()),
+            key=self._spec_priority_sort_key)
 
         return OrderedDict(schemas)
 
-    def _priority_sort_key(self, kv_schema):
+    def _spec_priority_sort_key(self, kv_schema):
         if isinstance(kv_schema[0].schema, Value):
             return -1
         else:
@@ -397,16 +276,16 @@ class Dict(SchemaABC):
 
 
 class Optional(_HashableSchema, SchemaABC):
-    """Schema helper used to mark a :class:`Dict` key as optional."""
-    def __init__(self, schema, default=NotSet):
-        super().__init__(schema)
-        self._default = default
+    """Schema helper used to mark a :class:`Dict` key as optional.
 
-    @property
-    def default(self):
-        if callable(self._default):
-            return self._default()
-        return self._default
+    Args:
+        spec (object): :class:`Dict` key schema specification.
+        default (object, optional): Default value or callable that returns a
+            default to be used when a key isn't given.
+    """
+    def __init__(self, spec, default=NotSet):
+        self._default = default
+        super().__init__(spec)
 
     def compile(self, spec):
         if (isinstance(spec, type) or
@@ -418,6 +297,12 @@ class Optional(_HashableSchema, SchemaABC):
 
         return schema
 
+    @property
+    def default(self):
+        if callable(self._default):
+            return self._default()
+        return self._default
+
     def __call__(self, obj):
         return self.schema(obj)
 
@@ -425,12 +310,15 @@ class Optional(_HashableSchema, SchemaABC):
 class All(SchemaABC):
     """Schema helper that validates against a list of schemas where all schems
     must validate.
+
+    Args:
+        *specs (object): Schema specifications to validate against.
     """
-    def __init__(self, *schemas):
-        super().__init__(schemas)
+    def __init__(self, *specs):
+        super().__init__(specs)
 
     def compile(self, spec):
-        return tuple(Schema(s) for s in spec)
+        return tuple(schemable.Schema(s) for s in spec)
 
     def __call__(self, obj):
         result = SchemaResult(obj, None)
@@ -447,12 +335,15 @@ class All(SchemaABC):
 class Any(SchemaABC):
     """Schema helper that validates against a list of schemas where at least
     one schema must validate.
+
+    Args:
+        *specs (object): Schema specifications to validate against.
     """
-    def __init__(self, *schemas):
-        super().__init__(schemas)
+    def __init__(self, *specs):
+        super().__init__(specs)
 
     def compile(self, spec):
-        return tuple(Schema(s) for s in spec)
+        return tuple(schemable.Schema(s) for s in spec)
 
     def __call__(self, obj):
         result = SchemaResult(obj, None)
@@ -468,7 +359,15 @@ class Any(SchemaABC):
 
 
 class Validate(_CallableSchema, SchemaABC):
-    """Schema helper that validates against a callable."""
+    """Schema helper that validates against a callable.
+
+    Validation passes if the callable returns ``None`` or a truthy value.
+    Validation fails if the callable raises and exception or returns a non-None
+    falsey value.
+
+    Args:
+        spec (callable): Callable to validate against.
+    """
     def __call__(self, obj):
         try:
             ret = self.schema(obj)
@@ -480,13 +379,3 @@ class Validate(_CallableSchema, SchemaABC):
                                  .format(self.name, obj))
 
         return obj
-
-
-class As(_CallableSchema, SchemaABC):
-    """Schema helper that modifies an object value using a callable."""
-    def __call__(self, obj):
-        try:
-            return self.schema(obj)
-        except Exception as exc:
-            raise AssertionError('{}({!r}) should not raise an exception: {}'
-                                 .format(self.name, obj, exc))

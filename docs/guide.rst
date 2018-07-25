@@ -1,7 +1,7 @@
-User's Guide
-============
+User Guide
+==========
 
-Schemas are defined using the ``Schema`` class which returns a callable object that can then be used to validate and load data:
+Schemas are defined using the :class:`.Schema` class which returns a callable object that can then be used to validate and load data:
 
 .. code-block:: python
 
@@ -15,7 +15,7 @@ Schemas are defined using the ``Schema`` class which returns a callable object t
     assert hasattr(result, 'error')
 
 
-The return from a schema call is a ``SchemaResult`` instance that contains two attributes: ``data`` and ``errors``. The ``data`` object defaults to ``None`` when nothing could be successfully validated. It may also contain partially loaded data when some validation passed but other validation failed:
+The return from a schema call is a :class:`.SchemaResult` instance that contains two attributes: ``data`` and ``errors``. The ``data`` object defaults to ``None`` when nothing could be successfully validated. It may also contain partially loaded data when some validation passed but other validation failed:
 
 .. code-block:: python
 
@@ -29,7 +29,7 @@ The return from a schema call is a ``SchemaResult`` instance that contains two a
     #     errors={'aa': {'bb': {'cc': 'bad value: type error, expected int but found str'}}})
 
 
-The ``errors`` attribute will either be a dictionary mapping of errors (when the top-level schema is a ``dict`` or ``list``) with keys corresponding to each point of failure or a string error message (when the top-level schema is *not* a ``dict`` or ``list``). If there are no errors, then ``SchemaResult.errors`` will be either ``{}`` or ``None``. The ``errors`` dictionary can span multiple "levels" and ``list`` indexes are treated as integer keys:
+The ``errors`` attribute will either be a dictionary mapping of errors (when the top-level schema is a ``dict`` or ``list``) with keys corresponding to each point of failure or a string error message (when the top-level schema is *not* a ``dict`` or ``list``). If there are no errors, then :attr:`.SchemaResult.errors` will be either ``{}`` or ``None``. The ``errors`` dictionary can span multiple "levels" and ``list`` indexes are treated as integer keys:
 
 .. code-block:: python
 
@@ -45,14 +45,14 @@ The ``errors`` attribute will either be a dictionary mapping of errors (when the
     #             'b': 'bad value: type error, expected list but found bool'})
 
 
-By default, schemas are evaulated in non-strict mode which always returns a ``SchemaResult`` instance whether validation passed or failed. However, in strict mode the exception ``SchemaError`` will be raised instead.
+By default, schemas are evaulated in non-strict mode which always returns a :class:`.SchemaResult` instance whether validation passed or failed. However, in strict mode the exception :class:`.SchemaError` will be raised instead.
 
 There are two ways to set strict mode:
 
-1. Set ``strict=True`` when creating a ``Schema`` object (i.e., ``Schema(..., strict=True)``)
+1. Set ``strict=True`` when creating a :class:`.Schema` object (i.e., ``Schema(..., strict=True)``)
 2. Set ``strict=True`` when evaulating a schema (i.e. ``schema(..., strict=True)``)
 
-**TIP:** If ``Schema()`` was created with ``strict=True``, use ``schema(..., strict=False)`` to evaulate the schema in non-strict mode.
+**TIP:** If :class:`.Schema` was created with ``strict=True``, use ``schema(..., strict=False)`` to evaulate the schema in non-strict mode.
 
 .. code-block:: python
 
@@ -84,10 +84,10 @@ Schemable is able to validate against the following:
 - raw values (like ``5``, ``'foo'``, etc.)
 - dicts (using ``dict`` objects)
 - lists (using ``list`` objects; applies schema object to all list items)
-- nested schemas (using ``dict``, ``list``, or ``Schema()``)
+- nested schemas (using ``dict``, ``list``, or :class:`.Schema`)
 - predicates (using callables that return a boolean value or raise an exception)
-- all predicates (using ``schemable.All``)
-- any predicate (using ``schemable.Any``)
+- all predicates (using :class:`.All`)
+- any predicate (using :class:`.Any`)
 
 
 Values
@@ -161,7 +161,7 @@ Predicates are simply callables that either return truthy or ``None`` (on succes
 All
 +++
 
-The ``All`` helper is used to validate against multiple predicates where all predicates must pass:
+The :class:`.All` helper is used to validate against multiple predicates where all predicates must pass:
 
 .. code-block:: python
 
@@ -182,7 +182,7 @@ The ``All`` helper is used to validate against multiple predicates where all pre
 Any
 +++
 
-The ``Any`` helper is used to validate against multiple predicates where at least one predicate must pass:
+The :class:`.Any` helper is used to validate against multiple predicates where at least one predicate must pass:
 
 .. code-block:: python
 
@@ -233,7 +233,7 @@ List validation is primarily used to validate each item in a list against a sche
 Dictionaries
 ++++++++++++
 
-Dictionary validation is one of the primary methods for creating schemas for validating things like JSON APIs, deserialized dictionaries, configuration objects, or any dict or dict-like object. These schemas are nestable and can be defined using dictionaries or lists or even other ``Schema`` instances defined elsewhere (i.e. ``Schema`` instances are reusable as part of a larger ``Schema``).
+Dictionary validation is one of the primary methods for creating schemas for validating things like JSON APIs, deserialized dictionaries, configuration objects, or any dict or dict-like object. These schemas are nestable and can be defined using dictionaries or lists or even other :class:`.Schema` instances defined elsewhere (i.e. :class:`.Schema` instances are reusable as part of a larger :class:`.Schema`).
 
 .. code-block:: python
 
@@ -308,7 +308,7 @@ Dictionary validation is one of the primary methods for creating schemas for val
     #                                  'or int but found float'}}}})
 
 
-By default all keys are required unless wrapped with ``Optional``. This includes key types like ``Schema({str: str})`` where that at least one data key must match all non-optional schema keys:
+By default all keys are required unless wrapped with :class:`.Optional`. This includes key types like ``Schema({str: str})`` where that at least one data key must match all non-optional schema keys:
 
 .. code-block:: python
 
@@ -343,9 +343,9 @@ Optional keys can define a default using the ``default`` argument:
 
 When determining how to handle extra keys (i.e. keys in the data but not matched in the schema), there are three modes:
 
-- ``ALLOW_EXTRA``: Any extra keys are passed to ``SchemaResult`` as-is.
-- ``DENY_EXTRA``: Any extra keys result in failed validation.
-- ``IGNORE_EXTRA`` (the default): All extra keys are ignored and won't appear in ``SchemaResult``.
+- :class:`.ALLOW_EXTRA`: Any extra keys are passed to :class:`.SchemaResult` as-is.
+- :class:`.DENY_EXTRA`: Any extra keys result in failed validation.
+- :class:`.IGNORE_EXTRA` (the default): All extra keys are ignored and won't appear in :class:`.SchemaResult`.
 
 The "extra" mode is set via ``Schema(..., extra=ALLOW_EXTRA|DENY_EXTRA|IGNORE_EXTRA)``:
 
@@ -388,7 +388,7 @@ For some schemas, data keys may logically match multiple schema keys (e.g. ``{'a
     # SchemaResult(data={'a': 1, 'x': 'y'}, errors={})
 
 
-For non-value-based key schemas (in the absence of a value-based key match) *all* key schemas will be checked. Each matching key schema's value schema will then be used with ``Any()`` when evaluating the data value. As long as at least one of the data-value schemas match, the data key-value will validate. However, be aware that multiple matching key schemas likely indicates that the schema can be rewritten so that keys will only match a single key schema. Generally, this is preferrable since it makes the schema more deterministic and probably more "correct".
+For non-value-based key schemas (in the absence of a value-based key match) *all* key schemas will be checked. Each matching key schema's value schema will then be used with :class:`.Any` when evaluating the data value. As long as at least one of the data-value schemas match, the data key-value will validate. However, be aware that multiple matching key schemas likely indicates that the schema can be rewritten so that keys will only match a single key schema. Generally, this is preferrable since it makes the schema more deterministic and probably more "correct".
 
 .. code-block:: python
 
@@ -418,7 +418,7 @@ For non-value-based key schemas (in the absence of a value-based key match) *all
 Transformation
 --------------
 
-In addition to validation, Schemable can transform data into computed values. Transformations can also be combined with validation using ``All`` to ensure data is only transformed after passing validation.
+In addition to validation, Schemable can transform data into computed values. Transformations can also be combined with validation using :class:`.All` to ensure data is only transformed after passing validation.
 
 .. code-block:: python
 
@@ -436,9 +436,9 @@ In addition to validation, Schemable can transform data into computed values. Tr
 
 
 As
-+++
+++
 
-The ``As`` helper is used to transform data into another value using a callable. Unlike predicate callables, the return value from an ``As`` instance call is used to set the schema value.
+The :class:`.As` helper is used to transform data into another value using a callable. Unlike predicate callables, the return value from an :class:`.As` instance call is used to set the schema value.
 
 .. code-block:: python
 
@@ -464,7 +464,7 @@ The ``As`` helper is used to transform data into another value using a callable.
     #                  "invalid literal for int() with base 10: 'x'"})
 
 
-``As`` can be used with ``All`` to perform validation and transformation. Each argument to ``All`` will be evaulated in series and composed so that multiple usage of ``As`` will simply transform the previous result.
+:class:`.As` can be used with :class:`.All` to perform validation and transformation. Each argument to :class:`.All` will be evaulated in series and composed so that multiple usage of :class:`.As` will simply transform the previous result.
 
 .. code-block:: python
 
@@ -478,8 +478,8 @@ Related Libraries
 
 Schemable borrows featues from several other schema libraries:
 
-- ``schema``: https://github.com/keleshev/schema
-- ``voluptuous``: https://github.com/alecthomas/voluptuous
-- ``marshmallow``: https://github.com/marshmallow-code/marshmallow
+- `schema <https://github.com/keleshev/schema>`_
+- `voluptuous <https://github.com/alecthomas/voluptuous>`_
+- `marshmallow <https://github.com/marshmallow-code/marshmallow>`_
 
 However, the main difference with Schemable is that it provides an interface similar to ``schema`` and ``voluptuous`` (i.e. simple object schema declartions using dicts/lists instead of classes) but supports partial data loading like ``marshmallow``. But unlike ``marshamallow``, there is no concept of loading/dumping or deserialization/serialization; there's just validation, transformation, and parsing (the de/serialization is left up to the developer).
