@@ -176,8 +176,12 @@ class Dict(SchemaABC):
 
         # Track obj keys that are validated.
         seen = set()
+        self._extend_with_selects(obj, data, errors, seen)
 
         for key, value in obj.items():
+            if key in seen:
+                continue
+
             # It's possible that a key may apply to multiple key schemas (e.g.
             # {str: str, (str, int): int}). In most cases, these schemas should
             # be rewritten so that the schema key types are exclusive but we
@@ -199,11 +203,14 @@ class Dict(SchemaABC):
                 # schemas to validate against. Basically, we'll treat it like
                 # an Any() schema (e.g. {str: str, (str, int): int} would be
                 # like {(str, int): Any(str, int)}.
-                for key_schema in self.schema:
+                for key_schema, value_schema in self.schema.items():
+                    if isinstance(value_schema.spec, schemable.Select):
+                        continue
+
                     if not key_schema(key).errors:
                         # Don't add duplicate value schemas.
-                        if self.schema[key_schema] not in value_schemas:
-                            value_schemas += (self.schema[key_schema],)
+                        if value_schema not in value_schemas:
+                            value_schemas += (value_schema,)
                         seen.add(key_schema)
 
             if not value_schemas:
@@ -222,10 +229,6 @@ class Dict(SchemaABC):
                                    .format([k.schema.spec for k in self.keys]))
                 continue  # pragma: no cover
 
-            # Keep track of seen keys so we can later check for any required
-            # key violations.
-            seen.add(key)
-
             # In the event that we have multiple value schemas due to `key`
             # matching multiple key schemas, we will apply the Any() validator
             # and return its results; otherwise, we'll just validate against
@@ -239,20 +242,8 @@ class Dict(SchemaABC):
             else:
                 value_schema = Any(*value_schemas)
 
-            value_result = value_schema(value)
-
-            if value_result.errors:
-                # If errors is a string, then we want to wrap it with a custom
-                # message; otherwise, errors is a dict of other errors so we
-                # just assign it.
-                error = value_result.errors
-                if isinstance(value_result.errors, str):
-                    error = 'bad value: {}'.format(error)
-                errors[key] = error
-
-            # Ensure data is partially/fullly loaded.
-            if value_result.data is not None or not value_result.errors:
-                data[key] = value_result.data
+            self._extend_with_result(
+                key, value_schema(value), data, errors, seen)
 
         missing = self.required - seen
 
@@ -271,6 +262,33 @@ class Dict(SchemaABC):
             data = None
 
         return SchemaResult(data, errors)
+
+    def _extend_with_result(self, key, result, data, errors, seen):
+        if result.errors:
+            # If errors is a string, then we want to wrap it with a custom
+            # message; otherwise, errors is a dict of other errors so we
+            # just assign it.
+            error = result.errors
+            if isinstance(result.errors, str):
+                error = 'bad value: {}'.format(error)
+            errors[key] = error
+
+        # Ensure data is partially/fullly loaded.
+        if result.data is not None or not result.errors:
+            data[key] = result.data
+
+        # Keep track of seen keys so we can later check for any required
+        # key violations.
+        seen.add(key)
+
+    def _extend_with_selects(self, obj, data, errors, seen):
+        for key_schema, value_schema in self.schema.items():
+            if not isinstance(value_schema.spec, schemable.Select):
+                continue
+            key = key_schema.spec
+            seen.add(key_schema)
+            self._extend_with_result(
+                key, value_schema(obj), data, errors, seen)
 
 
 class Optional(_HashableSchema, SchemaABC):

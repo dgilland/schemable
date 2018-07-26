@@ -12,6 +12,7 @@ from schemable import (
     Optional,
     Schema,
     SchemaError,
+    Select,
     Validate
 )
 
@@ -704,6 +705,72 @@ def test_optional(case):
     ),
 ])
 def test_as(case):
+    assert_schema_case(case)
+
+
+@parametrize('case', [
+    dict(
+        schema=Select('a'),
+        data={'a': 5},
+        expected_data=5,
+        expected_errors=None
+    ),
+    dict(
+        schema=Select(lambda obj: obj['a']),
+        data={'a': 5},
+        expected_data=5,
+        expected_errors=None
+    ),
+    dict(
+        schema=Select('a', lambda a: a * 2),
+        data={'a': 5},
+        expected_data=10,
+        expected_errors=None
+    ),
+    dict(
+        schema={
+            'a': Select('a'),
+            'aa': Select('a'),
+            'aaa': Select(lambda obj: obj['a'] + obj['b']),
+            'aaaa': Select('a', lambda a: a)
+        },
+        data={'a': 5, 'b': 10},
+        expected_data={
+            'a': 5,
+            'aa': 5,
+            'aaa': 15,
+            'aaaa': 5
+        },
+        expected_errors={}
+    ),
+    dict(
+        schema=Select('a'),
+        data=[],
+        expected_data=None,
+        expected_errors='type error, expected Mapping but found list'
+    ),
+    dict(
+        schema={
+            'a': Select('a'),
+            'aa': Select('a'),
+            'aaa': Select(lambda obj: obj['a'] + obj['b']),
+            'aaaa': Select('a', lambda a: a)
+        },
+        data={'b': 10},
+        expected_data=None,
+        expected_errors={
+            'a': ("bad value: itemgetter({'b': 10}) should not raise an "
+                  "exception: KeyError: 'a'"),
+            'aa': ("bad value: itemgetter({'b': 10}) should not raise an "
+                   "exception: KeyError: 'a'"),
+            'aaa': ("bad value: <lambda>({'b': 10}) should not raise an "
+                    "exception: KeyError: 'a'"),
+            'aaaa': ("bad value: itemgetter({'b': 10}) should not raise an "
+                     "exception: KeyError: 'a'"),
+        }
+    ),
+])
+def test_select(case):
     assert_schema_case(case)
 
 
