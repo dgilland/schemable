@@ -699,7 +699,7 @@ def test_optional(case):
         schema=As(int),
         data='a',
         expected_data=None,
-        expected_errors=("int('a') should not raise an exception: "
+        expected_errors=("int('a') should not raise an exception: ValueError: "
                          "invalid literal for int() with base 10: 'a'")
     ),
 ])

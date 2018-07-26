@@ -17,5 +17,6 @@ class As(_CallableSchema, SchemaABC):
         try:
             return self.schema(obj)
         except Exception as exc:
-            raise AssertionError('{}({!r}) should not raise an exception: {}'
-                                 .format(self.name, obj, exc))
+            raise AssertionError(
+                '{}({!r}) should not raise an exception: {}: {}'
+                .format(self.name, obj, exc.__class__.__name__, exc))
