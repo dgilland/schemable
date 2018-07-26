@@ -171,9 +171,7 @@ class Dict(SchemaABC):
     def __call__(self, obj):
         self._validate_obj(obj)
 
-        # As type(obj) to create data so that data's type is the same as obj
-        # since we support multiple types for obj.
-        data = type(obj)()
+        data = {}
         errors = {}
 
         # Track obj keys that are validated.

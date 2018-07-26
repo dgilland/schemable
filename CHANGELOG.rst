@@ -3,6 +3,7 @@ Changelog
 
 
 - Include execption class name in error message returned by ``As``.
+- Always return a ``dict`` when parsing from dictionary schemas instead of trying to use the source data's type as an initializer. (**breaking change**)
 
 
 v0.2.0 (2018-07-25)
