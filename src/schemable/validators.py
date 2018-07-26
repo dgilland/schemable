@@ -176,7 +176,7 @@ class Dict(SchemaABC):
 
         # Track obj keys that are validated.
         seen = set()
-        self._extend_with_selects(obj, data, errors, seen)
+        self._extend_with_usables(obj, data, errors, seen)
 
         for key, value in obj.items():
             if key in seen:
@@ -204,7 +204,7 @@ class Dict(SchemaABC):
                 # an Any() schema (e.g. {str: str, (str, int): int} would be
                 # like {(str, int): Any(str, int)}.
                 for key_schema, value_schema in self.schema.items():
-                    if isinstance(value_schema.spec, schemable.Select):
+                    if isinstance(value_schema.spec, schemable.Use):
                         continue
 
                     if not key_schema(key).errors:
@@ -281,9 +281,9 @@ class Dict(SchemaABC):
         # key violations.
         seen.add(key)
 
-    def _extend_with_selects(self, obj, data, errors, seen):
+    def _extend_with_usables(self, obj, data, errors, seen):
         for key_schema, value_schema in self.schema.items():
-            if not isinstance(value_schema.spec, schemable.Select):
+            if not isinstance(value_schema.spec, schemable.Use):
                 continue
             key = key_schema.spec
             seen.add(key_schema)

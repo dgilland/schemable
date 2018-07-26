@@ -13,6 +13,7 @@ from schemable import (
     Schema,
     SchemaError,
     Select,
+    Use,
     Validate
 )
 
@@ -771,6 +772,36 @@ def test_as(case):
     ),
 ])
 def test_select(case):
+    assert_schema_case(case)
+
+
+@parametrize('case', [
+    dict(
+        schema=Use(5),
+        data=10,
+        expected_data=5,
+        expected_errors=None
+    ),
+    dict(
+        schema=Use(lambda: 5),
+        data=10,
+        expected_data=5,
+        expected_errors=None
+    ),
+    dict(
+        schema={'a': Use('b')},
+        data={},
+        expected_data={'a': 'b'},
+        expected_errors={}
+    ),
+    dict(
+        schema={'a': Use(dict)},
+        data={},
+        expected_data={'a': {}},
+        expected_errors={}
+    ),
+])
+def test_use(case):
     assert_schema_case(case)
 
 

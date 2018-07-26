@@ -8,7 +8,20 @@ from .base import NotSet, SchemaABC, _CallableSchema
 from .validators import All, Type
 
 
-class Select(SchemaABC):
+class Use(SchemaABC):
+    """Schema helper that returns a constant value or the return from a
+    callable while ignoring the source data.
+
+    Args:
+        spec (object): Any object or callable.
+    """
+    def __call__(self, *args):
+        if callable(self.schema):
+            return self.schema()
+        return self.schema
+
+
+class Select(Use):
     """Schema helper that selects and optionally modifies source data.
 
     There are three ways to use:
@@ -41,11 +54,11 @@ class Select(SchemaABC):
 
         if (key is not None and
                 not callable(key) and
-                (not isinstance(key, str) or not key)):
+                (not isinstance(key, str) or not key)):  # pragma: no cover
             raise TypeError('Schema spec must must be a callable or non-empty '
                             'string but found {!r}'.format(key))
 
-        if iteratee is not None and not callable(iteratee):
+        if iteratee is not None and not callable(iteratee):  # pragma: no cover
             raise TypeError('Schema iteratee must be callable or None but '
                             'found {!r}'.format(iteratee))
 

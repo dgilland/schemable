@@ -19,7 +19,8 @@ from .schema import (
 
 from .transforms import (
     As,
-    Select
+    Select,
+    Use
 )
 
 from .validators import (
