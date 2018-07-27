@@ -435,10 +435,44 @@ In addition to validation, Schemable can transform data into computed values. Tr
     # SchemaResult(data=None, errors='type error, expected float or int but found str')
 
 
-As
-++
+Select
+++++++
 
-The :class:`.As` helper is used to transform data into another value using a callable. Unlike predicate callables, the return value from an :class:`.As` instance call is used to set the schema value.
+The :class:`.Select` helper is used to "select" data from a source mapping (typically just a dictionary) and optionally transform it. The main usage patterns are:
+
+- ``Select(<callable>)``: Select and modify the source using ``<callable>`` as in ``mycallable(source)``. Typically use-case is to return computed data that uses one or more source fields.
+- ``Select('<field>')``: Select ``'<field>'`` from source and return it as-is as in ``source['field']``. Typically use-case is to alias a source field.
+- ``Select('<field>', <callable>)``: Select ``'<field>'`` from source and modify it using ``<callable>`` as in ``mycallable(source['field'])``. This is actually equivalent to ``All(Select('field'), mycallable)`` but provides a terser syntax.
+
+.. code-block:: python
+
+    from schemable import Schema, Select
+
+    schema = Schema({
+        'items': [str],
+        'total_items': Select('items', len),
+        'user_settings': Select('userSettings'),
+        'full_name': Select(lambda d: '{} {}'.format(d['firstName'], d['lastName']))
+    })
+
+    schema({
+        'items': ['a', 'b', 'c'],
+        'userSettings': {},
+        'firstName': 'Alice',
+        'lastName': 'Smith'
+    })
+    # SchemaResult(
+    #     data={'total_items': 3,
+    #           'user_settings': {},
+    #           'full_name': 'Alice Smith',
+    #           'items': ['a', 'b', 'c']},
+    #     errors={})
+
+
+As
++++
+
+The :class:`.As` helper is used to transform data into another value using a callable. For dictionary schemas, this helper can transform the source value (unlike :class:`.Select` which can transform any part of the source). It is equivalent to ``{'a': Select('a', func)}`` but provides a terser syntax.
 
 .. code-block:: python
 
@@ -464,13 +498,35 @@ The :class:`.As` helper is used to transform data into another value using a cal
     #                  "invalid literal for int() with base 10: 'x'"})
 
 
-:class:`.As` can be used with :class:`.All` to perform validation and transformation. Each argument to :class:`.All` will be evaulated in series and composed so that multiple usage of :class:`.As` will simply transform the previous result.
+When used with :class:`.All`, each argument to :class:`.All` will be evaulated in series and composed so that multiple usage of :class:`.As` will simply transform the previous result.
 
 .. code-block:: python
 
     schema = Schema(All(As(int), As(float)))
     schema(1.5)
     # SchemaResult(data=1.0, errors=None)
+
+
+Use
++++
+
+The :class:`.Use` helper returns either a constant value or the result of a callable called without any arguments.
+
+.. code-block:: python
+
+    from schemable import Schema, Use
+    from datetime import datetime
+
+    schema = Schema({
+        'api_version': Use('v1'),
+        'timestamp': Use(datetime.now)
+    })
+
+    schema({})
+    # SchemaResult(
+    #     data={'api_version': 'v1',
+    #           'timestamp': datetime.datetime(2018, 7, 28, 21, 47, 16, 365280)},
+    #     errors={})
 
 
 Related Libraries
