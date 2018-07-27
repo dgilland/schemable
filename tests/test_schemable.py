@@ -9,10 +9,13 @@ from schemable import (
     All,
     Any,
     As,
+    Dict,
+    List,
     Optional,
     Schema,
     SchemaError,
     Select,
+    Type,
     Use,
     Validate
 )
@@ -1002,3 +1005,20 @@ def test_strict_exception(case):
     assert exc2.errors == case['expected_errors']
     assert exc2.data == case['expected_data']
     assert exc2.original_data == case['data']
+
+
+@parametrize('schema_class, args, exception', [
+    (Type, (1,), TypeError),
+    (List, ({},), TypeError),
+    (Dict, ([],), TypeError),
+    (Validate, (1,), TypeError),
+    (Select, ('a', 1), TypeError),
+    (Select, (None, None), TypeError),
+    (As, (1,), TypeError),
+    (dict, ((Use('a'), 'a'),), TypeError),
+    (dict, ((Select('a'), 'a'),), TypeError),
+    (dict, ((As(list), 'a'),), TypeError),
+])
+def test_invalid_schema(schema_class, args, exception):
+    with pytest.raises(exception):
+        schema_class(*args)
