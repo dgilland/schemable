@@ -34,23 +34,23 @@ class Schema(_HashableSchema, SchemaABC):
 
         super().__init__(spec)
 
-    def compile(self, spec):
+    def compile(self):
         # Compile `spec` into one of the available :class:`SchemaABC` dervied
         # classes based on type.
-        if isinstance(spec, Schema):
-            schema = spec.schema
-        elif isinstance(spec, SchemaABC):
-            schema = spec
-        elif isinstance(spec, list):
-            schema = schemable.List(spec)
-        elif isinstance(spec, dict):
-            schema = schemable.Dict(spec, extra=self.extra)
-        elif isinstance(spec, (tuple, type)):
-            schema = schemable.Type(spec)
-        elif callable(spec):
-            schema = schemable.Validate(spec)
+        if isinstance(self.spec, Schema):
+            schema = self.spec.schema
+        elif isinstance(self.spec, SchemaABC):
+            schema = self.spec
+        elif isinstance(self.spec, list):
+            schema = schemable.List(self.spec)
+        elif isinstance(self.spec, dict):
+            schema = schemable.Dict(self.spec, extra=self.extra)
+        elif isinstance(self.spec, (tuple, type)):
+            schema = schemable.Type(self.spec)
+        elif callable(self.spec):
+            schema = schemable.Validate(self.spec)
         else:
-            schema = schemable.Value(spec)
+            schema = schemable.Value(self.spec)
 
         return schema
 

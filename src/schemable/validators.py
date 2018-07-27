@@ -13,7 +13,6 @@ from .base import (
     NotSet,
     SchemaABC,
     SchemaResult,
-    _CallableSchema,
     _HashableSchema
 )
 
@@ -25,13 +24,13 @@ class Type(_HashableSchema, SchemaABC):
         spec (type|tuple[type]): A type or tuple or tuple of types to validate
             against.
     """
-    def compile(self, spec):
-        if isinstance(spec, type):
-            schema = (spec,)
-        elif (isinstance(spec, tuple) and
-                all(isinstance(s, type) for s in spec)):
-            schema = spec
-        else:  # pragma: no cover
+    def compile(self):
+        if isinstance(self.spec, type):
+            schema = (self.spec,)
+        elif (isinstance(self.spec, tuple) and
+                all(isinstance(s, type) for s in self.spec)):
+            schema = self.spec
+        else:
             raise TypeError('{} schema spec must be a type or a tuple of types'
                             .format(self.__class__.__name__))
         return schema
@@ -84,12 +83,12 @@ class List(SchemaABC):
     """
     _validate_obj = Type(list)
 
-    def compile(self, spec):
-        if not isinstance(spec, list):  # pragma: no cover
+    def compile(self):
+        if not isinstance(self.spec, list):
             raise TypeError('{} schema spec must be a list'
                             .format(self.__class__.__name__))
 
-        return All(*spec)
+        return All(*self.spec)
 
     def __call__(self, obj):
         self._validate_obj(obj)
@@ -134,12 +133,19 @@ class Dict(SchemaABC):
 
         super().__init__(spec)
 
-    def compile(self, spec):
-        if not isinstance(spec, dict):  # pragma: no cover
+    def compile(self):
+        if not isinstance(self.spec, dict):
             raise TypeError('{} schema spec must be a dict'
                             .format(self.__class__.__name__))
 
-        schema = self._prioritize_spec(spec)
+        # Order schema by whether the schema key is a Value object or not so
+        # that all Value objects are first in the schema. This way we favor
+        # validating a key by Value schemas over Type schemas.
+        schemas = sorted(
+            ((schemable.Schema(key), schemable.Schema(value, extra=self.extra))
+             for key, value in self.spec.items()),
+            key=self._spec_priority_sort_key)
+        schema = OrderedDict(schemas)
 
         self.keys = sorted(schema.keys(), key=str)
         self.required = set(k for k in schema
@@ -150,17 +156,6 @@ class Dict(SchemaABC):
                          k.schema.default is not NotSet}
 
         return schema
-
-    def _prioritize_spec(self, spec):
-        # Order schema by whether the schema key is a Value object or not so
-        # that all Value objects are first in the schema. This way we favor
-        # validating a key by Value schemas over Type schemas.
-        schemas = sorted(
-            ((schemable.Schema(key), schemable.Schema(value, extra=self.extra))
-             for key, value in spec.items()),
-            key=self._spec_priority_sort_key)
-
-        return OrderedDict(schemas)
 
     def _spec_priority_sort_key(self, kv_schema):
         if isinstance(kv_schema[0].schema, Value):
@@ -303,13 +298,13 @@ class Optional(_HashableSchema, SchemaABC):
         self._default = default
         super().__init__(spec)
 
-    def compile(self, spec):
-        if (isinstance(spec, type) or
-                (isinstance(spec, tuple) and
-                 all(isinstance(s, type) for s in spec))):
-            schema = Type(spec)
+    def compile(self):
+        if (isinstance(self.spec, type) or
+                (isinstance(self.spec, tuple) and
+                 all(isinstance(s, type) for s in self.spec))):
+            schema = Type(self.spec)
         else:
-            schema = Value(spec)
+            schema = Value(self.spec)
 
         return schema
 
@@ -333,8 +328,8 @@ class All(SchemaABC):
     def __init__(self, *specs):
         super().__init__(specs)
 
-    def compile(self, spec):
-        return tuple(schemable.Schema(s) for s in spec)
+    def compile(self):
+        return tuple(schemable.Schema(s) for s in self.spec)
 
     def __call__(self, obj):
         result = SchemaResult(obj, None)
@@ -358,8 +353,8 @@ class Any(SchemaABC):
     def __init__(self, *specs):
         super().__init__(specs)
 
-    def compile(self, spec):
-        return tuple(schemable.Schema(s) for s in spec)
+    def compile(self):
+        return tuple(schemable.Schema(s) for s in self.spec)
 
     def __call__(self, obj):
         result = SchemaResult(obj, None)
@@ -374,7 +369,7 @@ class Any(SchemaABC):
         return result
 
 
-class Validate(_CallableSchema, SchemaABC):
+class Validate(SchemaABC):
     """Schema helper that validates against a callable.
 
     Validation passes if the callable returns ``None`` or a truthy value.
@@ -384,6 +379,13 @@ class Validate(_CallableSchema, SchemaABC):
     Args:
         spec (callable): Callable to validate against.
     """
+    def compile(self):
+        if not callable(self.spec):
+            raise TypeError('{} schema spec must be callable'
+                            .format(self.__class__.__name__))
+
+        return self.spec
+
     def __call__(self, obj):
         try:
             ret = self.schema(obj)
@@ -392,6 +394,6 @@ class Validate(_CallableSchema, SchemaABC):
 
         if not ret and ret is not None:
             raise AssertionError('{}({!r}) should evaluate to True'
-                                 .format(self.name, obj))
+                                 .format(self.spec_name, obj))
 
         return obj

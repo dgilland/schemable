@@ -67,10 +67,11 @@ class SchemaABC(ABC):
     """
     def __init__(self, spec):
         self.spec = spec
-        self.schema = self.compile(self.spec)
+        self.spec_name = _get_spec_name(spec)
+        self.schema = self.compile()
 
-    def compile(self, spec):
-        return spec
+    def compile(self):
+        return self.spec
 
     @abstractmethod
     def __call__(self):  # pragma: no cover
@@ -86,30 +87,23 @@ class SchemaABC(ABC):
 
 
 class _HashableSchema(object):
-    def __hash__(self):  # pragma: no cover
+    def __hash__(self):
         return hash(self.schema)
 
-    def __eq__(self, other):  # pragma: no cover
+    def __eq__(self, other):
         return self.schema == other
 
     def __ne__(self, other):  # pragma: no cover
-        return not(self == other)
+        return not (self == other)
 
 
-class _CallableSchema(object):
-    def compile(self, spec):
-        if not callable(spec):  # pragma: no cover
-            raise TypeError('{} schema spec must be callable'
-                            .format(self.__class__.__name__))
+def _get_spec_name(spec):
+    if hasattr(spec, '__name__'):
+        name = spec.__name__
+    elif (hasattr(spec, '__class__') and
+            hasattr(spec.__class__, '__name__')):
+        name = spec.__class__.__name__
+    else:  # pragma: no cover
+        name = repr(spec)
 
-        if hasattr(spec, '__name__'):
-            name = spec.__name__
-        elif (hasattr(spec, '__class__') and
-                hasattr(spec.__class__, '__name__')):
-            name = spec.__class__.__name__
-        else:  # pragma: no cover
-            name = repr(spec)
-
-        self.name = name
-
-        return spec
+    return name

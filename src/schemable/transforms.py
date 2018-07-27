@@ -4,7 +4,7 @@
 from collections.abc import Mapping
 from operator import itemgetter
 
-from .base import NotSet, SchemaABC, _CallableSchema
+from .base import NotSet, SchemaABC
 from .validators import All, Type
 
 
@@ -45,20 +45,14 @@ class Select(Use):
         spec = (spec, iteratee)
         super().__init__(spec)
 
-    def compile(self, spec):
-        key, iteratee = spec
+    def compile(self):
+        key, iteratee = self.spec
 
         if callable(key):
             iteratee = key
             key = None
 
-        if (key is not None and
-                not callable(key) and
-                (not isinstance(key, str) or not key)):  # pragma: no cover
-            raise TypeError('Schema spec must must be a callable or non-empty '
-                            'string but found {!r}'.format(key))
-
-        if iteratee is not None and not callable(iteratee):  # pragma: no cover
+        if iteratee is not None and not callable(iteratee):
             raise TypeError('Schema iteratee must be callable or None but '
                             'found {!r}'.format(iteratee))
 
@@ -73,7 +67,7 @@ class Select(Use):
         return self.schema(obj)
 
 
-class As(_CallableSchema, SchemaABC):
+class As(SchemaABC):
     """Schema helper that modifies a parsed schema value using a callable.
 
     Unlike :class:`.Validate` the return value from the callable will replace
@@ -82,10 +76,17 @@ class As(_CallableSchema, SchemaABC):
     Args:
         spec (callable): Callable that transforms a value.
     """
+    def compile(self):
+        if not callable(self.spec):
+            raise TypeError('{} schema spec must be callable'
+                            .format(self.__class__.__name__))
+
+        return self.spec
+
     def __call__(self, obj):
         try:
             return self.schema(obj)
         except Exception as exc:
             raise AssertionError(
                 '{}({!r}) should not raise an exception: {}: {}'
-                .format(self.name, obj, exc.__class__.__name__, exc))
+                .format(self.spec_name, obj, exc.__class__.__name__, exc))
