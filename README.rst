@@ -38,7 +38,7 @@ Install using pip:
     pip install schemable
 
 
-Validate and load data using ``dict`` and ``list`` objects:
+Define a schema using ``dict`` and ``list`` objects:
 
 .. code-block:: python
 
@@ -68,9 +68,15 @@ Validate and load data using ``dict`` and ``list`` objects:
         }]
     })
 
+
+Then validate and load by passing data to ``user_schema()``:
+
+
+.. code-block:: python
+
     # Fail!
     result = user_schema({
-        'name': 'Bob Barr',
+        'name': 'Bob Smith',
         'email': 'bob.example.com',
         'active': 1,
         'settings': {
@@ -90,7 +96,7 @@ Validate and load data using ``dict`` and ``list`` objects:
 
     print(result)
     # SchemaResult(
-    #     data={'name': 'Bob Barr',
+    #     data={'name': 'Bob Smith',
     #           'settings': {'extra_setting1': 'val1',
     #                        'language': 'en'}
     #           'addresses': [{'street_addr1': '123 Lane',
@@ -108,7 +114,7 @@ Validate and load data using ``dict`` and ``list`` objects:
 
     # Fail!
     result = user_schema({
-        'name': 'Bob Barr',
+        'name': 'Bob Smith',
         'email': 'bob@example.com',
         'active': True,
         'settings': {
@@ -128,7 +134,7 @@ Validate and load data using ``dict`` and ``list`` objects:
 
     print(result)
     # SchemaResult(
-    #     data={'name': 'Bob Barr',
+    #     data={'name': 'Bob Smith',
     #           'email': 'bob@example.com',
     #           'active': True,
     #           'settings': {'extra_setting1': 'val1',
@@ -144,10 +150,16 @@ Validate and load data using ``dict`` and ``list`` objects:
     #             'phone': "bad value: <lambda>('123456789') should evaluate to True",
     #             'aliases': 'missing required key'})
 
+
+Or can raise an exception on validation failure instead of returning results:
+
+
+.. code-block:: python
+
     # Fail strictly!
     try:
         user_schema({
-            'name': 'Bob Barr',
+            'name': 'Bob Smith',
             'email': 'bob@example.com',
             'active': True,
             'settings': {
@@ -171,9 +183,14 @@ Validate and load data using ``dict`` and ``list`` objects:
         # 'phone': "bad value: <lambda>('123456789') should evaluate to True", \
         # 'aliases': 'missing required key'}
 
+
+Access the parsed data after successful validation:
+
+.. code-block:: python
+
     # Pass!
     result = user_schema({
-        'name': 'Bob Barr',
+        'name': 'Bob Smith',
         'email': 'bob@example.com',
         'active': True,
         'settings': {
@@ -194,7 +211,7 @@ Validate and load data using ``dict`` and ``list`` objects:
 
     print(result)
     # SchemaResult(
-    #     data={'name': 'Bob Barr',
+    #     data={'name': 'Bob Smith',
     #           'email': 'bob@example.com',
     #           'active': True,
     #           'settings': {'theme': 'dark',
