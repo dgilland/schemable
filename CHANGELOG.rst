@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+v0.3.0 (2018-07-27)
+-------------------
+
 - Add schema helpers:
 
   - ``Select``
