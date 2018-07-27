@@ -41,7 +41,7 @@ class Select(Use):
     """
     _validate_obj = Type(Mapping)
 
-    def __init__(self, spec, iteratee=None):
+    def __init__(self, spec, iteratee=NotSet):
         spec = (spec, iteratee)
         super().__init__(spec)
 
@@ -50,13 +50,13 @@ class Select(Use):
 
         if callable(key):
             iteratee = key
-            key = None
+            key = NotSet
 
-        if iteratee is not None and not callable(iteratee):
-            raise TypeError('Schema iteratee must be callable or None but '
-                            'found {!r}'.format(iteratee))
+        if iteratee is not NotSet and not callable(iteratee):
+            raise TypeError('Schema iteratee must be callable but found {!r}'
+                            .format(iteratee))
 
-        if isinstance(key, str):
+        if key is not NotSet and not callable(key):
             key = itemgetter(key)
 
         return All(*(As(fn) for fn in (key, iteratee) if fn))

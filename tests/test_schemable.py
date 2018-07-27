@@ -729,6 +729,12 @@ def test_as(case):
         expected_errors=None
     ),
     dict(
+        schema=Select(1),
+        data={1: 5},
+        expected_data=5,
+        expected_errors=None
+    ),
+    dict(
         schema={
             'a': Select('a'),
             'aa': Select('a'),
