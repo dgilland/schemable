@@ -387,13 +387,19 @@ class Validate(SchemaABC):
         return self.spec
 
     def __call__(self, obj):
+        ret = False
+        err = None
+
         try:
             ret = self.schema(obj)
-        except Exception:
-            ret = False
+        except Exception as exc:
+            err = str(exc)
 
-        if not ret and ret is not None:
-            raise AssertionError('{}({!r}) should evaluate to True'
-                                 .format(self.spec_name, obj))
+        if not err and not ret and ret is not None:
+            err = ('{}({!r}) should evaluate to True'
+                   .format(self.spec_name, obj))
+
+        if err:
+            raise AssertionError(err)
 
         return obj

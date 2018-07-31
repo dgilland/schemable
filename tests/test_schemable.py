@@ -819,7 +819,7 @@ def test_use(case):
         schema=Validate(int),
         data='a',
         expected_data=None,
-        expected_errors="int('a') should evaluate to True"
+        expected_errors="invalid literal for int() with base 10: 'a'"
     ),
 ])
 def test_validate(case):
