@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+v0.3.1 (2018-07-31)
+-------------------
+
 - If a validate callable raises an exception, use its string representation as the schema error message. Previously, a custom error message stating that the callable should evaluate to true was used when validator returned falsey and when it raised an exception. That message is now only returned when the validator doesn't raise but returns falsey.
 
 
