@@ -19,6 +19,7 @@ from schemable import (
     Use,
     Validate
 )
+from schemable.base import SchemaABC
 
 parametrize = pytest.mark.parametrize
 
@@ -31,16 +32,16 @@ def assert_schema_case(case):
     assert result.errors == case['expected_errors']
 
     if isinstance(result.data, dict):
-        assert check_schema_result_keys(result.data.keys()), (
+        assert check_schema_result_key_types(result.data.keys()), (
             'SchemaResult.data must not have keys with Schema objects')
 
     if isinstance(result.errors, dict):
-        assert check_schema_result_keys(result.errors.keys()), (
+        assert check_schema_result_key_types(result.errors.keys()), (
             'SchemaResult.errors must not have keys with Schema objects')
 
 
-def check_schema_result_keys(keys):
-    return all(map(lambda k: not isinstance(k, Schema), keys))
+def check_schema_result_key_types(keys):
+    return all(map(lambda k: not isinstance(k, SchemaABC), keys))
 
 
 @parametrize('case', [
@@ -707,6 +708,18 @@ def test_dict_resolution_order(case):
         expected_data=None,
         expected_errors={'a': ("bad value: <lambda>({}) should not raise an "
                                "exception: KeyError: 'b'")}
+    ),
+    dict(
+        schema={Optional('a'): Select('b', lambda obj: [obj])},
+        data={},
+        expected_data={},
+        expected_errors={}
+    ),
+    dict(
+        schema={Optional('a'): Select('b', lambda obj: [obj])},
+        data={'b': 1},
+        expected_data={'a': [1]},
+        expected_errors={}
     ),
 ])
 def test_optional(case):

@@ -262,7 +262,10 @@ class Dict(SchemaABC):
         if result.data is NotSet:
             return
 
-        key_spec = getattr(key, 'spec', key)
+        if isinstance(key, schemable.Schema):
+            key_spec = key.schema.spec
+        else:
+            key_spec = key
 
         if result.errors:
             # If errors is a string, then we want to wrap it with a custom
