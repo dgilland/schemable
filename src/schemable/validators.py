@@ -259,6 +259,9 @@ class Dict(SchemaABC):
         return SchemaResult(data, errors)
 
     def _extend_with_result(self, key, result, data, errors, seen):
+        if result.data is NotSet:
+            return
+
         key_spec = getattr(key, 'spec', key)
 
         if result.errors:

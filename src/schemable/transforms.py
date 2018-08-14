@@ -2,7 +2,6 @@
 """
 
 from collections.abc import Mapping
-from operator import itemgetter
 
 from .base import NotSet, SchemaABC
 from .validators import All, Type
@@ -53,11 +52,11 @@ class Select(Use):
             key = NotSet
 
         if iteratee is not NotSet and not callable(iteratee):
-            raise TypeError('Schema iteratee must be callable but found {!r}'
-                            .format(iteratee))
+            raise TypeError('{} iteratee must be callable but found {!r}'
+                            .format(self.__class__.__name__, iteratee))
 
         if key is not NotSet and not callable(key):
-            key = itemgetter(key)
+            key = _selectgetter(key)
 
         return All(*(As(fn) for fn in (key, iteratee) if fn))
 
@@ -90,3 +89,7 @@ class As(SchemaABC):
             raise AssertionError(
                 '{}({!r}) should not raise an exception: {}: {}'
                 .format(self.spec_name, obj, exc.__class__.__name__, exc))
+
+
+def _selectgetter(key):
+    return lambda obj: obj.get(key, NotSet)

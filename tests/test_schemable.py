@@ -795,14 +795,11 @@ def test_as(case):
         data={'b': 10},
         expected_data=None,
         expected_errors={
-            'a': ("bad value: itemgetter({'b': 10}) should not raise an "
-                  "exception: KeyError: 'a'"),
-            'aa': ("bad value: itemgetter({'b': 10}) should not raise an "
-                   "exception: KeyError: 'a'"),
+            'a': "missing required key",
+            'aa': "missing required key",
             'aaa': ("bad value: <lambda>({'b': 10}) should not raise an "
                     "exception: KeyError: 'a'"),
-            'aaaa': ("bad value: itemgetter({'b': 10}) should not raise an "
-                     "exception: KeyError: 'a'"),
+            'aaaa': "missing required key",
         }
     ),
 ])

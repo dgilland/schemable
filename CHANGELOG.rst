@@ -3,6 +3,7 @@ Changelog
 
 
 - Fix case where schema object with an ``Optional(key)`` would result in ``SchemaResult.errors[Optional(key)]``. Ensure that ``SchemaResult.errors[key]`` is set instead.
+- Ignore ``KeyError`` when using ``Schema({'key': Select('other_key')})`` when ``'other_key'`` isn't present in the source object. Return a missing key error instead.
 
 
 v0.3.1 (2018-07-31)
