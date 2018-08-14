@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+v0.4.1 (2018-08-14)
+-------------------
+
 - Fix previous fix for case where schema results could have ``data`` or ``errors`` with schema classes as keys.
 - Ensure that ``Select('key', <iteratee>)`` doesn't call ``<iteratee>`` if ``'key'`` was not found in the source data.
 
