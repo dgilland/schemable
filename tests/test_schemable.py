@@ -30,6 +30,18 @@ def assert_schema_case(case):
     assert result.data == case['expected_data']
     assert result.errors == case['expected_errors']
 
+    if isinstance(result.data, dict):
+        assert check_schema_result_keys(result.data.keys()), (
+            'SchemaResult.data must not have keys with Schema objects')
+
+    if isinstance(result.errors, dict):
+        assert check_schema_result_keys(result.errors.keys()), (
+            'SchemaResult.errors must not have keys with Schema objects')
+
+
+def check_schema_result_keys(keys):
+    return all(map(lambda k: not isinstance(k, Schema), keys))
+
 
 @parametrize('case', [
     dict(
@@ -681,6 +693,20 @@ def test_dict_resolution_order(case):
         data={'a': 'x'},
         expected_data={'a': 'x'},
         expected_errors={}
+    ),
+    dict(
+        schema={Optional('a'): int},
+        data={'a': 'x'},
+        expected_data=None,
+        expected_errors={'a': ("bad value: type error, "
+                               "expected int but found str")}
+    ),
+    dict(
+        schema={Optional('a'): Select(lambda obj: obj['b'])},
+        data={},
+        expected_data=None,
+        expected_errors={'a': ("bad value: <lambda>({}) should not raise an "
+                               "exception: KeyError: 'b'")}
     ),
 ])
 def test_optional(case):

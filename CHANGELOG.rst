@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+- Fix case where schema object with an ``Optional(key)`` would result in ``SchemaResult.errors[Optional(key)]``. Ensure that ``SchemaResult.errors[key]`` is set instead.
+
+
 v0.3.1 (2018-07-31)
 -------------------
 

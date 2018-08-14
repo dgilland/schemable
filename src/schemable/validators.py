@@ -237,8 +237,8 @@ class Dict(SchemaABC):
             else:
                 value_schema = Any(*value_schemas)
 
-            self._extend_with_result(
-                key, value_schema(value), data, errors, seen)
+            result = value_schema(value)
+            self._extend_with_result(key, result, data, errors, seen)
 
         missing = self.required - seen
 
@@ -259,6 +259,8 @@ class Dict(SchemaABC):
         return SchemaResult(data, errors)
 
     def _extend_with_result(self, key, result, data, errors, seen):
+        key_spec = getattr(key, 'spec', key)
+
         if result.errors:
             # If errors is a string, then we want to wrap it with a custom
             # message; otherwise, errors is a dict of other errors so we
@@ -266,24 +268,23 @@ class Dict(SchemaABC):
             error = result.errors
             if isinstance(result.errors, str):
                 error = 'bad value: {}'.format(error)
-            errors[key] = error
+            errors[key_spec] = error
 
         # Ensure data is partially/fullly loaded.
         if result.data is not None or not result.errors:
-            data[key] = result.data
+            data[key_spec] = result.data
 
         # Keep track of seen keys so we can later check for any required
         # key violations.
-        seen.add(key)
+        seen.update((key, key_spec))
 
     def _extend_with_usables(self, obj, data, errors, seen):
         for key_schema, value_schema in self.schema.items():
             if not isinstance(value_schema.spec, schemable.Use):
                 continue
-            key = key_schema.spec
-            seen.add(key_schema)
-            self._extend_with_result(
-                key, value_schema(obj), data, errors, seen)
+
+            result = value_schema(obj)
+            self._extend_with_result(key_schema, result, data, errors, seen)
 
 
 class Optional(_HashableSchema, SchemaABC):
