@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+- Ensure that ``Select('key', <iteratee>)`` doesn't call ``<iteratee>`` if ``'key'`` was not found in the source data.
+
+
 v0.4.0 (2018-08-14)
 -------------------
 

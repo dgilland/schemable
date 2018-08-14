@@ -2,6 +2,7 @@
 """
 
 from collections.abc import Mapping
+from functools import wraps
 
 from .base import NotSet, SchemaABC
 from .validators import All, Type
@@ -58,6 +59,9 @@ class Select(Use):
         if key is not NotSet and not callable(key):
             key = _selectgetter(key)
 
+        if callable(iteratee):
+            iteratee = _selectiteratee(iteratee)
+
         return All(*(As(fn) for fn in (key, iteratee) if fn))
 
     def __call__(self, obj):
@@ -93,3 +97,12 @@ class As(SchemaABC):
 
 def _selectgetter(key):
     return lambda obj: obj.get(key, NotSet)
+
+
+def _selectiteratee(iteratee):
+    @wraps(iteratee)
+    def decorated(obj):
+        if obj is NotSet:
+            return obj
+        return iteratee(obj)
+    return decorated
