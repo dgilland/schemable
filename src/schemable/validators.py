@@ -12,6 +12,7 @@ from .base import (
     IGNORE_EXTRA,
     NotSet,
     SchemaABC,
+    SchemaError,
     SchemaResult,
     _HashableSchema
 )
@@ -235,9 +236,16 @@ class Dict(SchemaABC):
             if len(value_schemas) == 1:
                 value_schema = value_schemas[0]
             else:
-                value_schema = Any(*value_schemas)
+                value_schema = schemable.Schema(Any(*value_schemas))
 
-            result = value_schema(value)
+            try:
+                result = value_schema(value,
+                                      strict=getattr(value_schema.spec,
+                                                     'strict',
+                                                     NotSet))
+            except SchemaError as exc:
+                result = SchemaResult(data=None, errors=exc.errors)
+
             self._extend_with_result(key, result, data, errors, seen)
 
         missing = self.required - seen

@@ -2,6 +2,9 @@ Changelog
 =========
 
 
+- Don't load partial data from a nested schema if it was created with ``strict=True`` (e.g. ``Schema({'key': Schema({...}, strict=True)})``).
+
+
 v0.4.1 (2018-08-14)
 -------------------
 

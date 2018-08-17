@@ -956,11 +956,27 @@ def test_any(case):
             'y': {'a': 2, 'b': '2'}
         },
         expected_data={
-            'x': {'b': '1'},
             'y': {'a': 2, 'b': '2'}
         },
         expected_errors={'x': {'a': 'missing required key'}}
     ),
+    dict(
+        schema={
+            'x': {
+                Optional(str): Schema({
+                    'a': str
+                }, strict=True)
+            }
+        },
+        data={
+            'x': {'y': {},
+                  'z': {'a': 'aa'}}
+        },
+        expected_data={
+            'x': {'z': {'a': 'aa'}}
+        },
+        expected_errors={'x': {'y': {'a': 'missing required key'}}}
+    )
 ])
 def test_nested_schema(case):
     assert_schema_case(case)
